@@ -7,6 +7,7 @@ build/
 data/
 src/main/kotlin/org/example/walkingrecommender/urban/main/
 tmp/
+.env
 
 ### STS ###
 .apt_generated
