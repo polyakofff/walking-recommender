@@ -1,5 +1,6 @@
 package org.example.walkingrecommender.core.routing.route
 
+import org.example.walkingrecommender.properties.WalkingRecommenderProperties
 import org.example.walkingrecommender.core.model.Graph
 import org.example.walkingrecommender.core.model.Node
 import org.example.walkingrecommender.core.db.GraphRepository
@@ -8,7 +9,7 @@ import org.example.walkingrecommender.core.model.externalId
 import org.example.walkingrecommender.core.routing.*
 import org.example.walkingrecommender.core.routing.waypoint.WaypointGenerator
 import org.example.walkingrecommender.core.routing.waypoint.WaypointGeneratorFactory
-import org.example.walkingrecommender.user.UserPreferences
+import org.example.walkingrecommender.user.Preferences
 import org.locationtech.jts.geom.Point
 import org.springframework.stereotype.Component
 import kotlin.math.max
@@ -19,7 +20,7 @@ data class WaypointRoute(
 )
 
 data class GenerationResult(
-    val routes: List<CalculatedRoute>,
+    val routes: List<ScoredRoute>,
     val data: ExtraData,
 )
 
@@ -30,6 +31,7 @@ data class ExtraData(
 
 @Component
 class RouteGenerator(
+    private val properties: WalkingRecommenderProperties,
     private val graphRepository: GraphRepository,
     private val waypointGeneratorFactory: WaypointGeneratorFactory,
     private val routeCalculator: RouteCalculator,
@@ -41,12 +43,16 @@ class RouteGenerator(
         startPoint: Point,
         goalPoint: Point,
         durationSeconds: Int,
-        userPreferences: UserPreferences,
-        scenicWeight: Double = 0.5,
+        preferences: Preferences,
+        scenicWeight: Double,
+        waypointUse: BooleanArray,
     ): GenerationResult {
         val directDistance = distance(startPoint, goalPoint)
         val desiredDistance = distance(durationSeconds)
-        val radius = max(directDistance * 1.5, desiredDistance)
+        val radius = max(
+            directDistance * properties.generatorDirectDistanceFactor,
+            desiredDistance
+        )
 
         val graph = graphRepository.findSubgraph(startPoint, radius)
         println("nodes: ${graph.nodes.size}")
@@ -61,7 +67,7 @@ class RouteGenerator(
         val costGraph = GraphUtils(
             graph,
             ScenicCostFunction(
-                userPreferences = userPreferences,
+                preferences = preferences,
                 scenicWeight = scenicWeight,
             ),
         )
@@ -91,30 +97,26 @@ class RouteGenerator(
 
         val candidates = waypointGenerator.getCandidates()
 
-        val routes = if (start.externalId() != goal.externalId()) { // A != B => path, 0-1 waypoints
-            val routes0 = get0WaypointRoutes(start, goal, costGraph)
-
-            val routes1 = get1WaypointRoutes(start, goal, costGraph, waypointGenerator)
-
-            routes0 + routes1
-
-        } else { // A = B => circular, 2-3 waypoints
-            val routes2 = get2WaypointRoutes(start, goal, costGraph, waypointGenerator)
-
-            // TODO: triples
-
-            routes2
+        val routes = mutableListOf<WaypointRoute>()
+        if (waypointUse[0]) {
+            routes += get0WaypointRoutes(start, goal, costGraph)
+        }
+        if (waypointUse[1]) {
+            routes += get1WaypointRoutes(start, goal, costGraph, waypointGenerator)
+        }
+        if (waypointUse[2]) {
+            routes += get2WaypointRoutes(start, goal, costGraph, waypointGenerator)
         }
 
         println("routes: ${routes.size}")
 
         val calculatedRoutes = routes.map { route ->
-            routeCalculator.calculate(route.route, userPreferences, durationSeconds)
+            routeCalculator.calculate(route.route, preferences, durationSeconds)
         }
 
-        val rankedRoutes = calculatedRoutes.sortedByDescending { route ->
-            routeScorer.score(route)
-        }
+        val rankedRoutes = calculatedRoutes
+            .map { route -> routeScorer.score(route) }
+            .sortedByDescending { it.score }
 
         val finalRoutes = routeSelector.select(rankedRoutes)
         println("finalRoutes: ${finalRoutes.size}")

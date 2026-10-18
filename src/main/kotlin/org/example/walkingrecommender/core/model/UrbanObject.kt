@@ -9,14 +9,14 @@ enum class OsmElementType {
 }
 
 enum class UrbanObjectType {
-    PARK,            // V
-    FOREST,          // V
-    WATER,           // V
-    INDUSTRIAL_AREA, // V
-    GARAGES,         // V
-    RAILWAY,         // V
-    BUILDING,        // V
-    ROAD,            // V
+    PARK,
+    FOREST,
+    WATER,
+    INDUSTRIAL_AREA,
+    GARAGES,
+    RAILWAY,
+    BUILDING,
+    ROAD,
 }
 
 data class UrbanObject(

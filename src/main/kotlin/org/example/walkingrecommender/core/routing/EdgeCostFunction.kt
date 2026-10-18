@@ -1,7 +1,7 @@
 package org.example.walkingrecommender.core.routing
 
 import org.example.walkingrecommender.core.model.Edge
-import org.example.walkingrecommender.user.UserPreferences
+import org.example.walkingrecommender.user.Preferences
 
 sealed interface EdgeCostFunction {
     fun cost(edge: Edge): Double
@@ -17,11 +17,11 @@ class FastestCostFunction : EdgeCostFunction {
 }
 
 class ScenicCostFunction(
-    private val userPreferences: UserPreferences,
+    private val preferences: Preferences,
     val scenicWeight: Double = 0.5,
 ) : EdgeCostFunction {
     override fun cost(edge: Edge): Double {
-        val attractiveness = attractiveness(edge, userPreferences)
+        val attractiveness = attractiveness(edge, preferences)
         return edge.walkingTime * (1.0 - scenicWeight * attractiveness)
     }
 

@@ -1,5 +1,10 @@
 package org.example.walkingrecommender.api
 
+import org.example.walkingrecommender.api.dto.AbRequest
+import org.example.walkingrecommender.api.dto.AbResponse
+import org.example.walkingrecommender.api.dto.Comparison
+import org.example.walkingrecommender.api.dto.VoteRequest
+import org.example.walkingrecommender.api.dto.toDto
 import org.example.walkingrecommender.core.ab.AbService
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -14,7 +19,7 @@ class AbController(
 
     @PostMapping("/generate")
     fun generate(@RequestBody request: AbRequest): AbResponse {
-        println(request)
+        println("generate: $request")
 
         val comparisons = abService.getComparisons(request)
             .map {
@@ -32,7 +37,7 @@ class AbController(
 
     @PostMapping("/vote")
     fun vote(@RequestBody request: VoteRequest) {
-        println(request)
+        println("vote: $request")
 
         abService.vote(request)
     }

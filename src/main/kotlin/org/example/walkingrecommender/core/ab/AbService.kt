@@ -1,127 +1,86 @@
 package org.example.walkingrecommender.core.ab
 
-import org.example.walkingrecommender.api.AbRequest
-import org.example.walkingrecommender.api.Choice
-import org.example.walkingrecommender.api.VoteRequest
-import org.example.walkingrecommender.core.routing.CalculatedRoute
-import org.example.walkingrecommender.core.routing.FastestCostFunction
-import org.example.walkingrecommender.core.routing.GraphUtils
-import org.example.walkingrecommender.core.routing.Route
-import org.example.walkingrecommender.core.routing.aStar
-import org.example.walkingrecommender.core.routing.route.RouteCalculator
-import org.example.walkingrecommender.core.routing.route.RouteGenerator
-import org.example.walkingrecommender.user.UserPreferences
-import org.locationtech.jts.geom.Coordinate
-import org.locationtech.jts.geom.GeometryFactory
+import org.example.walkingrecommender.api.dto.AbRequest
+import org.example.walkingrecommender.api.dto.VoteRequest
+import org.example.walkingrecommender.core.db.ComparisonRepository
+import org.example.walkingrecommender.core.db.RouteRepository
+import org.example.walkingrecommender.core.model.RouteType
+import org.example.walkingrecommender.core.routing.*
+import org.example.walkingrecommender.user.UserService
+import org.example.walkingrecommender.user.toPreferences
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
-
-data class Comparison(
-    val id: String,
-    val routeA: CalculatedRoute,
-    val routeB: CalculatedRoute,
-)
 
 @Service
 class AbService(
-    private val geometryFactory: GeometryFactory,
-    private val routeGenerator: RouteGenerator,
-    private val routeCalculator: RouteCalculator,
+    private val userService: UserService,
+    private val routeService: RouteService,
+    private val routeRepository: RouteRepository,
+    private val comparisonRepository: ComparisonRepository,
 ) {
 
-    private val prefs0 = UserPreferences()
-
-    private val labels = mutableMapOf<String, String>()
+    private val labels = ConcurrentHashMap<UUID, String>()
 
     fun getComparisons(request: AbRequest): List<Comparison> {
+        val user = userService.get(request.username)
+            ?: error("User ${request.username} not found")
 
-        val startPoint = geometryFactory.createPoint(
-            Coordinate(request.start.longitude, request.start.latitude)
-        )
-        val endPoint = geometryFactory.createPoint(
-            Coordinate(request.end.longitude, request.end.latitude)
-        )
+        if (user.preferences == null) {
+            error("User ${request.username} not configured")
+        }
 
-        val prefs = UserPreferences(
-            greenery = 0.3,
-            water = 0.5,
-            traffic = -0.5,
-            noise = -0.3,
-            historicArchitecture = 0.0,
-            modernArchitecture = 0.5,
-            commercialActivity = 0.0,
-            grittiness = -1.0,
-            pedestrianComfort = 1.0
-        )
-        // TODO: get prefs
+        val durationSeconds = request.durationMinutes * 60
 
-        val (routes, data) = routeGenerator.generate(
-            startPoint = startPoint,
-            goalPoint = endPoint,
-            durationSeconds = request.durationMinutes * 60,
-            userPreferences = prefs,
+        val preferences = user.preferences.toPreferences()
+
+        val (routes, graph) = routeService.getBestNRoutes(
+            startLon = request.start.longitude,
+            startLat = request.start.latitude,
+            endLon = request.end.longitude,
+            endLat = request.end.latitude,
+            durationSeconds = durationSeconds,
+            preferences = preferences,
+            n = request.count,
         )
 
-        val timeGraph = GraphUtils(
-            data.graph,
-            FastestCostFunction()
-        )
+        val comparisons = routes.shuffled().map { route ->
+            val paired = routeService.getPairedFastestRoute(route, graph)
 
-        val comparisons = routes
-            .take(request.comparisonCount)
-            .map { route ->
-                val paired = getPairedRoute(route, timeGraph, request.durationMinutes)
+            val dbRoute = routeRepository.save(
+                route = route,
+                type = RouteType.PERSONALIZED_SCENIC,
+            )
+            val dbPaired = routeRepository.save(
+                route = paired,
+                type = RouteType.FASTEST,
+            )
 
-                val id = generateId()
+            val comparisonId = UUID.randomUUID()
 
-                val (routeA, routeB) = if (Random.nextBoolean()) {
-                    labels[id] = "B"
-                    paired to route
-                } else {
-                    labels[id] = "A"
-                    route to paired
-                }
-
-                Comparison(
-                    id = id,
-                    routeA = routeA,
-                    routeB = routeB,
-                )
+            val (routeA, routeB) = if (Random.nextBoolean()) { // swap
+                labels[comparisonId] = "B"
+                dbPaired to dbRoute
+            } else {
+                labels[comparisonId] = "A"
+                dbRoute to dbPaired
             }
+
+            val comparison = Comparison(
+                id = comparisonId,
+                userId = user.id,
+                preferencesVersion = user.preferences.version,
+                routeA = routeA,
+                routeB = routeB,
+                algorithmVersion = routeService.algorithmVersion(),
+            )
+            comparisonRepository.save(comparison)
+
+            comparison
+        }
 
         return comparisons
-    }
-
-    private fun getPairedRoute(
-        route: CalculatedRoute,
-        graph: GraphUtils,
-        durationMinutes: Int,
-    ): CalculatedRoute {
-        val paths = route.route.paths
-            .map { path ->
-                aStar(
-                    path.start,
-                    path.end,
-                    graph
-                ) ?: error("Path not found for start: ${path.start}, end: ${path.end}")
-            }
-
-        val paired = Route(
-            route.route.start,
-            route.route.goal,
-            paths
-        )
-
-        return routeCalculator.calculate(
-            paired,
-            prefs0,
-            durationMinutes * 60
-        )
-    }
-
-    private fun generateId(): String {
-        return UUID.randomUUID().toString()
     }
 
     fun vote(request: VoteRequest) {
@@ -142,5 +101,10 @@ class AbService(
                 println("Wrong")
             }
         }
+
+        comparisonRepository.update(
+            comparisonId = request.comparisonId,
+            choice = request.choice
+        )
     }
 }

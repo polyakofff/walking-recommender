@@ -1,5 +1,7 @@
 package org.example.walkingrecommender.core.db
 
+import org.example.walkingrecommender.core.db.impl.NearestNode
+import org.example.walkingrecommender.core.db.impl.SegmentsWithEdges
 import org.example.walkingrecommender.core.model.EdgeSegment
 import org.example.walkingrecommender.core.model.Graph
 import org.locationtech.jts.geom.Point

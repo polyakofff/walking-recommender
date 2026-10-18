@@ -2,13 +2,13 @@ package org.example.walkingrecommender.core.routing
 
 import org.example.walkingrecommender.core.model.Edge
 import org.example.walkingrecommender.core.model.SegmentFeatures
-import org.example.walkingrecommender.user.UserPreferences
+import org.example.walkingrecommender.user.Preferences
 import kotlin.math.abs
 
 /**
  * Edge attractiveness in [-1..1]
  */
-fun attractiveness(edge: Edge, prefs: UserPreferences): Double {
+fun attractiveness(edge: Edge, prefs: Preferences): Double {
     requireNotNull(edge.segments)
 
     val totalDistance = edge.segments.sumOf { it.distanceMeters }
@@ -23,7 +23,7 @@ fun attractiveness(edge: Edge, prefs: UserPreferences): Double {
 /**
  * Segment attractiveness in [-1..1]
  */
-fun attractiveness(f: SegmentFeatures, p: UserPreferences): Double {
+fun attractiveness(f: SegmentFeatures, p: Preferences): Double {
     var like = 0.0
     var dislike = 0.0
     var totalWeight = 0.0

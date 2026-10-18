@@ -1,0 +1,134 @@
+body {
+    font-family: sans-serif;
+    margin: 40px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+button {
+    display: block;
+    margin: 10px 0;
+    padding: 12px 24px;
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: default;
+    opacity: 0.5;
+}
+
+input {
+    padding: 10px;
+    font-size: 16px;
+}
+
+#setup-answers button {
+    width: 100%;
+    border: 1px solid #ccc;
+    background: white;
+}
+
+#setup-answers button.selected {
+    background: #222;
+    color: white;
+    border-color: #222;
+}
+
+#map,
+#ab-map,
+#eval-map {
+    width: 600px;
+    height: 400px;
+}
+
+.route-legend {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 12px;
+    font-size: 18px;
+}
+
+.route-legend label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.route-color {
+    width: 28px;
+    height: 6px;
+    border-radius: 3px;
+}
+
+.route-a-color {
+    background: #2563eb;
+}
+
+.route-b-color {
+    background: #f97316;
+}
+
+.route-info {
+    font-size: 14px;
+    color: #666;
+    margin-left: 28px;
+}
+
+#eval-rating {
+    display: flex;
+    gap: 8px;
+}
+
+#eval-rating button.selected {
+    background: #222;
+    color: white;
+    border-color: #222;
+}
+
+#eval-reasons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+#eval-reasons label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.point-marker {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-weight: bold;
+
+    background: white;
+    border: 3px solid black;
+
+    transform: translate(-50%, -50%);
+}
+
+.start-marker {
+    border-color: #16a34a;
+}
+
+.end-marker {
+    border-color: #dc2626;
+}
+
+.start-end-marker {
+    border-color: #7c3aed;
+}

@@ -1,8 +1,8 @@
 package org.example.walkingrecommender.core.routing.route
 
-import org.example.walkingrecommender.core.routing.CalculatedRoute
+import org.example.walkingrecommender.core.routing.ScoredRoute
 
 interface RouteSelector {
 
-    fun select(routes: List<CalculatedRoute>): List<CalculatedRoute>
+    fun select(routes: List<ScoredRoute>): List<ScoredRoute>
 }

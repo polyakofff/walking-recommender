@@ -42,12 +42,6 @@ fun dijkstra(start: Node, graph: GraphUtils): DijkstraResult {
     return DijkstraResult(costs, times)
 }
 
-data class Path(
-    val start: Node,
-    val end: Node,
-    val edges: List<Edge>,
-)
-
 fun aStar(start: Node, goal: Node, graph: GraphUtils): Path? {
     val q = PriorityQueue<Pair<Node, Double>> { p1, p2 -> p1.second.compareTo(p2.second) }
     q.add(start to 0.0)

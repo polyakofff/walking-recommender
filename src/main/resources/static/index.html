@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Walking Recommender</title>
+
+    <link rel="stylesheet" href="/style.css">
+
+    <script src="https://api-maps.yandex.ru/v3/?apikey=849dc797-91f2-4091-9daa-690617bc09cf&lang=ru_RU"></script>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+
+<div id="login-screen" class="screen">
+    <h1>Walking Recommender</h1>
+
+    <input
+            id="username-input"
+            type="text"
+            placeholder="Username"
+    >
+
+    <button id="login-button">
+        Продолжить
+    </button>
+</div>
+
+
+<!-- MAIN MENU -->
+
+<div id="main-screen" class="screen hidden">
+    <h2 id="welcome"></h2>
+
+    <button id="setup-button">
+        Настроить предпочтения
+    </button>
+
+    <button id="ab-button">
+        Пройти A/B тест
+    </button>
+
+    <button id="eval-button">
+        Оценить маршруты
+    </button>
+
+    <div id="test-disabled-message" class="hidden">
+        Сначала настройте предпочтения
+    </div>
+
+    <button id="change-user-button">
+        Сменить пользователя
+    </button>
+</div>
+
+
+<!-- PREFS -->
+
+<div id="setup-screen" class="screen hidden">
+
+    <button id="setup-back">
+        ← Назад
+    </button>
+
+    <div id="setup-progress"></div>
+
+    <h2 id="setup-question"></h2>
+
+    <div id="setup-answers"></div>
+
+    <button id="setup-next" disabled>
+        Далее
+    </button>
+
+</div>
+
+
+<!-- ROUTE -->
+
+<div id="route-screen" class="screen hidden">
+
+    <button id="route-back">
+        ← Назад
+    </button>
+
+    <div id="map"></div>
+
+    <div class="controls">
+        <div>
+            Start
+            <span id="start-value">не выбран</span>
+        </div>
+
+        <div>
+            End
+            <span id="end-value">не выбран</span>
+
+            <label>
+                <input type="checkbox" id="start-equals-end">
+                Circular
+            </label>
+        </div>
+
+        <label>
+            Duration:
+            <input id="duration" type="number" value="60" min="10">
+            min
+        </label>
+
+        <label>
+            N:
+            <input id="count" type="number" value="10" min="1">
+        </label>
+
+        <button id="generate">
+            Generate
+        </button>
+    </div>
+
+
+    <!-- AB -->
+
+    <div id="ab-content" hidden>
+        <h2 id="ab-progress"></h2>
+
+        <div id="ab-map"></div>
+
+        <div class="route-legend">
+            <div>
+                <label>
+                    <input type="checkbox" id="show-a" checked>
+                    <span class="route-color route-a-color"></span>
+                    A
+                </label>
+
+                <div id="route-a-info" class="route-info"></div>
+            </div>
+
+            <div>
+                <label>
+                    <input type="checkbox" id="show-b" checked>
+                    <span class="route-color route-b-color"></span>
+                    B
+                </label>
+
+                <div id="route-b-info" class="route-info"></div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button data-choice="A">A</button>
+            <button data-choice="B">B</button>
+            <button data-choice="EQUAL">Одинаково</button>
+            <button data-choice="NONE">Ни один</button>
+        </div>
+    </div>
+
+
+    <!-- EVALUATION -->
+
+    <div id="eval-content" hidden>
+
+        <h2 id="eval-progress"></h2>
+
+        <div id="eval-map"></div>
+
+        <div id="eval-route-info" class="route-info"></div>
+
+        <h3>Насколько вам нравится этот маршрут?</h3>
+
+        <div id="eval-rating"></div>
+
+        <h3>Укажите, пожалуйста, причины</h3>
+
+        <div id="eval-reasons"></div>
+
+        <textarea
+                id="eval-other-text"
+                placeholder="Другая причина"
+        ></textarea>
+
+        <button id="eval-submit">
+            Отправить
+        </button>
+
+    </div>
+
+    <div id="test-finished" hidden>
+        <h2>Тест завершён</h2>
+        <button id="test-finished-back">
+            В главное меню
+        </button>
+    </div>
+
+</div>
+
+
+<script src="/app.js"></script>
+<script src="/prefs.js"></script>
+<script src="/route.js"></script>
+<script src="/ab.js"></script>
+<script src="/eval.js"></script>
+
+</body>
+</html>

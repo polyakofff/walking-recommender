@@ -1,10 +1,11 @@
 package org.example.walkingrecommender.core.task
 
+import org.example.walkingrecommender.properties.WalkingRecommenderProperties
 import org.example.walkingrecommender.core.model.EdgeSegment
 import org.example.walkingrecommender.core.feature.FeatureCalculator
 import org.example.walkingrecommender.core.model.SegmentFeatures
 import org.example.walkingrecommender.core.db.GraphRepository
-import org.example.walkingrecommender.core.db.SegmentsWithEdges
+import org.example.walkingrecommender.core.db.impl.SegmentsWithEdges
 import org.example.walkingrecommender.core.db.UrbanObjectRepository
 import org.example.walkingrecommender.core.model.toSegmentId
 import org.springframework.stereotype.Component
@@ -14,17 +15,18 @@ class CalculateSegmentsTask(
     private val graphRepository: GraphRepository,
     private val urbanObjectRepository: UrbanObjectRepository,
     private val featureCalculator: FeatureCalculator,
+    private val properties: WalkingRecommenderProperties,
 ) {
-
-    val version = 1
-    val radiusMeters = 300.0
 
     fun run() {
         var iteration = 0
         while (true) {
             println("iteration: $iteration")
 
-            val data = graphRepository.findSegmentsWithVersionLessThan(version, limit = 100_000)
+            val data = graphRepository.findSegmentsWithVersionLessThan(
+                version = featureCalculator.version(),
+                limit = 100_000,
+            )
 
             if (data.segments.isEmpty()) {
                 break
@@ -48,7 +50,7 @@ class CalculateSegmentsTask(
 
                 val withinObjects = urbanObjectRepository.findWithinObjects(
                     segmentIds = segmentIds,
-                    radiusMeters = radiusMeters,
+                    radiusMeters = properties.withinObjectsRadiusMeters.toDouble(),
                 )
                 val totalObjects = withinObjects.values.sumOf { it.size }
                 println("batch: ${batchIndex}, total objects: $totalObjects")
@@ -71,7 +73,7 @@ class CalculateSegmentsTask(
                             grittiness = features.grittiness,
                             pedestrianComfort = features.pedestrianComfort,
                         ),
-                        featuresVersion = version,
+                        featuresVersion = featureCalculator.version(),
                     )
                 }
             }

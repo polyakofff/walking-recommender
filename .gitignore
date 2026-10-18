@@ -5,7 +5,7 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 data/
-src/main/kotlin/org/example/walkingrecommender/urban/main/
+src/main/kotlin/org/example/walkingrecommender/core/main/test/
 tmp/
 .env
 

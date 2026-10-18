@@ -1,6 +1,6 @@
 package org.example.walkingrecommender.user
 
-data class UserPreferences(
+data class Preferences(
     val greenery: Double = 0.0,
     val water: Double = 0.0,
     val traffic: Double = 0.0,

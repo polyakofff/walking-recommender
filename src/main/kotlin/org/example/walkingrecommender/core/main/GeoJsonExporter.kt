@@ -7,6 +7,7 @@ import org.example.walkingrecommender.core.osm.OsmData
 import org.example.walkingrecommender.core.osm.OsmNodeDto
 import org.example.walkingrecommender.core.osm.OsmWayDto
 import org.example.walkingrecommender.core.routing.CalculatedRoute
+import org.example.walkingrecommender.core.routing.Route
 import org.locationtech.jts.geom.LineString
 import org.locationtech.jts.geom.Point
 import tools.jackson.module.kotlin.jacksonObjectMapper
@@ -128,15 +129,15 @@ class GeoJsonExporter {
                     "distance" to edge.distance,
                     "walking time" to edge.walkingTime,
                     "cost" to cost,
-                    "greenery" to gre,
-                    "water" to wa,
-                    "traffic" to tr,
-                    "noise" to no,
-                    "historicArchitecture" to hi,
-                    "modernArchitecture" to mo,
-                    "commercialActivity" to co,
-                    "grittiness" to gri,
-                    "pedestrianComfort" to pe,
+//                    "greenery" to gre,
+//                    "water" to wa,
+//                    "traffic" to tr,
+//                    "noise" to no,
+//                    "historicArchitecture" to hi,
+//                    "modernArchitecture" to mo,
+//                    "commercialActivity" to co,
+//                    "grittiness" to gri,
+//                    "pedestrianComfort" to pe,
 
 //                    "stroke" to "#383838",
                     "stroke" to Color.black.toHexString(),
@@ -333,8 +334,8 @@ class GeoJsonExporter {
             .writeValue(file, geoJson)
     }
 
-    fun exportRoute(route: CalculatedRoute, file: File) {
-        val features = route.route.paths
+    fun exportRoute(route: Route, file: File) {
+        val features = route.paths
             .flatMap { path -> path.edges }
             .map { edge ->
                 val coordinates = edge.geometry.coordinates.map { listOf(it.x, it.y) }
@@ -353,7 +354,7 @@ class GeoJsonExporter {
                         "coordinates" to coordinates
                     )
                 )
-        } + route.route.paths.mapIndexed { index, path ->
+        } + route.paths.mapIndexed { index, path ->
             val coordinates = path.start.geometry.coordinates.flatMap { listOf(it.x, it.y) }
 
             mapOf(
