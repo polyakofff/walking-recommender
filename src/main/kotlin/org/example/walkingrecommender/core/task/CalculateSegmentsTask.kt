@@ -8,6 +8,7 @@ import org.example.walkingrecommender.core.db.GraphRepository
 import org.example.walkingrecommender.core.db.impl.SegmentsWithEdges
 import org.example.walkingrecommender.core.db.UrbanObjectRepository
 import org.example.walkingrecommender.core.model.toSegmentId
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 @Component
@@ -17,11 +18,12 @@ class CalculateSegmentsTask(
     private val featureCalculator: FeatureCalculator,
     private val properties: WalkingRecommenderProperties,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun run() {
         var iteration = 0
         while (true) {
-            println("iteration: $iteration")
+            logger.info("iteration: $iteration")
 
             val data = graphRepository.findSegmentsWithVersionLessThan(
                 version = featureCalculator.version(),
@@ -41,7 +43,7 @@ class CalculateSegmentsTask(
     }
 
     private fun calculateData(data: SegmentsWithEdges): List<EdgeSegment> {
-        println("segments: ${data.segments.size}")
+        logger.info("segments: ${data.segments.size}")
 
         return data.segments
             .chunked(1000)
@@ -53,7 +55,7 @@ class CalculateSegmentsTask(
                     radiusMeters = properties.withinObjectsRadiusMeters.toDouble(),
                 )
                 val totalObjects = withinObjects.values.sumOf { it.size }
-                println("batch: ${batchIndex}, total objects: $totalObjects")
+                logger.info("batch: ${batchIndex}, total objects: $totalObjects")
 
                 segments.map { segment ->
                     val features = featureCalculator.calculateSegment(

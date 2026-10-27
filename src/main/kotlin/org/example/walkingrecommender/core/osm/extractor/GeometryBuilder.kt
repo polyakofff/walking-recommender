@@ -5,6 +5,7 @@ import org.example.walkingrecommender.core.osm.OsmNodeDto
 import org.example.walkingrecommender.core.osm.OsmRelationDto
 import org.example.walkingrecommender.core.osm.OsmWayDto
 import org.locationtech.jts.geom.*
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 
 data class PolygonParts(
@@ -14,6 +15,8 @@ data class PolygonParts(
 
 @Component
 class GeometryBuilder(private val geometryFactory: GeometryFactory) {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun buildPoint(node: OsmNodeDto): Point {
         return geometryFactory.createPoint(
@@ -93,7 +96,7 @@ class GeometryBuilder(private val geometryFactory: GeometryFactory) {
                     way.nodeIds.first() == last || way.nodeIds.last() == last
                 }
                 if (index == -1) {
-                    println("Cannot close ring for way [${way0.id}]")
+                    logger.warn("Cannot close ring for way [${way0.id}]")
                     break
                 }
                 val way = unused.removeAt(index)

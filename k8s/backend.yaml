@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: walker-web
+
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: walker-web-public
+
+  template:
+    metadata:
+      labels:
+        app: walker-web-public
+
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+
+      containers:
+        - name: backend
+          image: ghcr.io/polyakofff/walking-recommender:latest
+
+          ports:
+            - containerPort: 8080
+
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "500m"
+            limits:
+              memory: "8Gi"
+              cpu: "2"
+
+          env:
+            - name: LOG_PATH
+              value: /logs
+
+            - name: DB_URL
+              value: jdbc:postgresql://postgres:5432/walking_recommender
+
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: walker-db
+                  key: username
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: walker-db
+                  key: password
+
+            - name: JAVA_TOOL_OPTIONS
+              value: >-
+                -Xmx6g
+                -Duser.timezone=Europe/Moscow
+
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+
+            allowPrivilegeEscalation: false
+
+            capabilities:
+              drop:
+                - ALL
+
+            seccompProfile:
+              type: RuntimeDefault

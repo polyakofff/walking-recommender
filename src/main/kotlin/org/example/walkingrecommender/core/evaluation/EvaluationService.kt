@@ -8,6 +8,7 @@ import org.example.walkingrecommender.core.model.RouteType
 import org.example.walkingrecommender.core.routing.RouteService
 import org.example.walkingrecommender.user.UserService
 import org.example.walkingrecommender.user.toPreferences
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -18,6 +19,7 @@ class EvaluationService(
     private val routeRepository: RouteRepository,
     private val evaluationRepository: EvaluationRepository,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun getEvaluations(request: EvaluationRequest): List<Evaluation> {
         val user = userService.get(request.username)
@@ -66,9 +68,7 @@ class EvaluationService(
     }
 
     fun evaluate(request: EvaluateRequest) {
-        println("${request.rating}/$MAX_RATING")
-        println("reasons: ${request.reasons}")
-        println("other: ${request.other}")
+        logger.info("Evaluation ${request.evaluationId}: rating=${request.rating}/$MAX_RATING, reasons: ${request.reasons}, other: ${request.other}")
 
         val reasons = (request.reasons.map { it.name } + request.other)
             .filterNotNull()

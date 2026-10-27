@@ -15,8 +15,6 @@ async function startEvaluation() {
     evalResult = null;
     evalIndex = 0;
 
-    document.getElementById("eval-content").hidden = true;
-
     if (evaluationMap !== null) {
         evaluationMap.destroy();
         evaluationMap = null;

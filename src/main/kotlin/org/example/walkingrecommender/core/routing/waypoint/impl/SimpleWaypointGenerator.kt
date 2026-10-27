@@ -4,12 +4,14 @@ import org.example.walkingrecommender.properties.WalkingRecommenderProperties
 import org.example.walkingrecommender.core.distance
 import org.example.walkingrecommender.core.model.Node
 import org.example.walkingrecommender.core.model.externalId
+import org.example.walkingrecommender.core.northAngle
 import org.example.walkingrecommender.core.routing.waypoint.CandidateSelector
 import org.example.walkingrecommender.core.routing.waypoint.WaypointGenerator
 import org.example.walkingrecommender.core.routing.waypoint.WaypointScorer
 import org.example.walkingrecommender.core.routing.waypoint.WaypointSelector
 import org.example.walkingrecommender.core.time
 import org.locationtech.jts.geom.Point
+import org.slf4j.LoggerFactory
 
 class SimpleWaypointGenerator(
     private val start: Node,
@@ -23,19 +25,21 @@ class SimpleWaypointGenerator(
     private val properties: WalkingRecommenderProperties,
 ) : WaypointGenerator {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
+
     private val candidates = candidateSelector.selectCandidates()
 
     init {
-        println("candidates: ${candidates.size}")
+        logger.info("candidates: ${candidates.size}")
     }
 
     override fun getCandidates(): List<Node> = candidates
 
     override fun generateWaypoints(): List<Node> {
         val waypoints = candidates
-            .byTimeToStartRatio(0.25)
+            .byTimeToStartRatio(0.25) // TODO
 
-            .byTimeToGoalRatio(0.25)
+            .byTimeToGoalRatio(0.25) // TODO
 
             // общее время не слишком большое
             .filter { node ->
@@ -50,23 +54,23 @@ class SimpleWaypointGenerator(
 
             .sortedByDescending { node -> waypointScorer.scoreWaypoint(node) }
 
-        println("waypoints: ${waypoints.size}")
+        logger.info("waypoints: ${waypoints.size}")
 
         // TODO: временная заглушка, покуда DiverseWaypointSelector.threshold <= SimpleCandidateSelector.distance
 //        val finalWaypoints = waypointSelector.selectWaypoints(waypoints)
         val finalWaypoints = waypoints
 
-        println("final waypoints: ${finalWaypoints.size}")
+        logger.info("final waypoints: ${finalWaypoints.size}")
 
         return finalWaypoints.take(properties.waypointGeneratorLimit)
     }
 
     override fun generateWaypointPairs(): List<Pair<Node, Node>> {
         val firstWaypoints = candidates
-            .byTimeToStartRatio(lowerBound = 0.25, upperBound = 0.5)
+            .byTimeToStartRatio(lowerBound = 0.25, upperBound = 0.5) // TODO
 
         val secondWaypoints = candidates
-            .byTimeToGoalRatio(lowerBound = 0.25, upperBound = 0.5)
+            .byTimeToGoalRatio(lowerBound = 0.25, upperBound = 0.5) // TODO
 
         val pairs = firstWaypoints.flatMap { n1 ->
             secondWaypoints
@@ -74,7 +78,7 @@ class SimpleWaypointGenerator(
 
                 // n1-start-n2 образуют угол
                 .filter { n2 ->
-                    angleDifference(start.geometry, n1.geometry, n2.geometry) in 30.0..150.0
+                    angleDifference(start.geometry, n1.geometry, n2.geometry) in 30.0..150.0 // TODO
                 }
 
                 // минимальное общее время не слишком большое
@@ -92,12 +96,12 @@ class SimpleWaypointGenerator(
         }
             .sortedByDescending { pair -> waypointScorer.scoreWaypointPair(pair) }
 
-        println("pairs: ${pairs.size}")
+        logger.info("pairs: ${pairs.size}")
 
 //        val finalPairs = waypointSelector.selectWaypointPairs(pairs)
         val finalPairs = pairs
 
-        println("final pairs: ${finalPairs.size}")
+        logger.info("final pairs: ${finalPairs.size}")
 
         return finalPairs.take(properties.waypointGeneratorPairsLimit)
     }
@@ -119,8 +123,8 @@ class SimpleWaypointGenerator(
     }
 
     private fun angleDifference(vertex: Point, point1: org.locationtech.jts.geom.Point, point2: org.locationtech.jts.geom.Point): Double {
-        val a1 = _root_ide_package_.org.example.walkingrecommender.core.northAngle(vertex.coordinate, point1.coordinate)
-        val a2 = _root_ide_package_.org.example.walkingrecommender.core.northAngle(vertex.coordinate, point2.coordinate)
+        val a1 = northAngle(vertex.coordinate, point1.coordinate)
+        val a2 = northAngle(vertex.coordinate, point2.coordinate)
 
         return (a2 - a1 + 360.0) % 360.0
     }

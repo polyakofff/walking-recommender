@@ -1,5 +1,6 @@
 package org.example.walkingrecommender.core.routing.route
 
+import org.example.walkingrecommender.MemoryUtils
 import org.example.walkingrecommender.properties.WalkingRecommenderProperties
 import org.example.walkingrecommender.core.model.Graph
 import org.example.walkingrecommender.core.model.Node
@@ -11,6 +12,7 @@ import org.example.walkingrecommender.core.routing.waypoint.WaypointGenerator
 import org.example.walkingrecommender.core.routing.waypoint.WaypointGeneratorFactory
 import org.example.walkingrecommender.user.Preferences
 import org.locationtech.jts.geom.Point
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import kotlin.math.max
 
@@ -38,6 +40,7 @@ class RouteGenerator(
     private val routeScorer: RouteScorer,
     private val routeSelector: RouteSelector,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun generate(
         startPoint: Point,
@@ -54,15 +57,41 @@ class RouteGenerator(
             desiredDistance
         )
 
-        val graph = graphRepository.findSubgraph(startPoint, radius)
-        println("nodes: ${graph.nodes.size}")
-        println("edges: ${graph.edges.size}")
+        val before = MemoryUtils.heapUsedMb()
+
+        val graph = try {
+            graphRepository.findSubgraph(startPoint, radius)
+        } catch (e: Exception) {
+            logger.error("Unable to load graph", e)
+            return GenerationResult(
+                emptyList(),
+                ExtraData(
+                    Graph(
+                        emptyMap(),
+                        emptyList()
+                    ),
+                    emptyList()
+                )
+            )
+        }
+
+        val after = MemoryUtils.heapUsedMb()
+
+        logger.info(
+            "Subgraph loaded: edges={}, nodes={}, heapBefore={} MB, heapAfter={} MB, heapDelta={} MB, heapMax={} MB",
+            graph.edges.size,
+            graph.nodes.size,
+            before,
+            after,
+            after - before,
+            MemoryUtils.heapMaxMb(),
+        )
 
         val (start, _) = graphRepository.findNearestNode(startPoint)
-            ?: throw IllegalStateException("start not found")
+            ?: error("start not found")
 
         val (goal, _) = graphRepository.findNearestNode(goalPoint)
-            ?: throw IllegalStateException("goal not found")
+            ?: error("goal not found")
 
         val costGraph = GraphUtils(
             graph,
@@ -78,7 +107,7 @@ class RouteGenerator(
         )
 
         if (goal.externalId() !in startToNodeTime) {
-            throw IllegalStateException("goal is not reachable from start")
+            error("goal is not reachable from start")
         }
 
         val (_, goalToNodeTime) = dijkstra(
@@ -108,7 +137,7 @@ class RouteGenerator(
             routes += get2WaypointRoutes(start, goal, costGraph, waypointGenerator)
         }
 
-        println("routes: ${routes.size}")
+        logger.info("routes: ${routes.size}")
 
         val calculatedRoutes = routes.map { route ->
             routeCalculator.calculate(route.route, preferences, durationSeconds)
@@ -119,7 +148,7 @@ class RouteGenerator(
             .sortedByDescending { it.score }
 
         val finalRoutes = routeSelector.select(rankedRoutes)
-        println("finalRoutes: ${finalRoutes.size}")
+        logger.info("finalRoutes: ${finalRoutes.size}")
 
         return GenerationResult(
             routes = finalRoutes,

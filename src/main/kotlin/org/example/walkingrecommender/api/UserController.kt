@@ -5,6 +5,7 @@ import org.example.walkingrecommender.api.dto.SavePreferencesRequest
 import org.example.walkingrecommender.api.dto.UserDto
 import org.example.walkingrecommender.api.dto.toDto
 import org.example.walkingrecommender.user.UserService
+import org.slf4j.LoggerFactory
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -18,17 +19,18 @@ import org.springframework.web.bind.annotation.RestController
 class UserController(
     val userService: UserService,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     @PostMapping
     fun create(@RequestBody request: CreateUserRequest): UserDto {
-        println("create user: $request")
+        logger.info("create user: {}", request)
 
         return userService.getOrCreate(request.username).toDto()
     }
 
     @GetMapping("/{username}")
     fun get(@PathVariable username: String): UserDto {
-        println("get user: $username")
+        logger.info("get user: $username")
 
         return userService.getOrCreate(username).toDto()
     }
@@ -38,7 +40,7 @@ class UserController(
         @PathVariable username: String,
         @RequestBody request: SavePreferencesRequest
     ): UserDto {
-        println("save preferences: $request for $username")
+        logger.info("save preferences: {} for {}", request, username)
 
         return userService.savePreferences(username, request.answers).toDto()
     }

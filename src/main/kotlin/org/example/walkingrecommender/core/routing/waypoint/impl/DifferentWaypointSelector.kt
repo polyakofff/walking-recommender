@@ -1,21 +1,23 @@
 package org.example.walkingrecommender.core.routing.waypoint.impl
 
-import org.example.walkingrecommender.properties.WalkingRecommenderProperties
 import org.example.walkingrecommender.core.distance
 import org.example.walkingrecommender.core.model.Node
 import org.example.walkingrecommender.core.routing.waypoint.WaypointSelector
 import org.locationtech.jts.geom.Point
+import org.slf4j.LoggerFactory
 
 class DifferentWaypointSelector(
     private val waypointSelectDistanceMeters: Int,
 ) : WaypointSelector {
+
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     override fun selectWaypoints(waypoints: List<Node>): List<Node> {
         val selected = mutableListOf<Node>()
 
         waypoints.forEachIndexed { index, candidate ->
             if (index % 10000 == 0) {
-                println("candidates viewed: $index, selected: ${selected.size}")
+                logger.info("candidates viewed: $index, selected: ${selected.size}")
             }
             val similar = selected.any { alreadySelected ->
                 areSimilar(
@@ -36,7 +38,7 @@ class DifferentWaypointSelector(
 
         pairs.forEachIndexed { index, candidate ->
             if (index % 10000 == 0) {
-                println("candidates viewed: $index, selected: ${selected.size}")
+                logger.info("candidates viewed: $index, selected: ${selected.size}")
             }
             val similar = selected.any { alreadySelected ->
                 areSimilar(

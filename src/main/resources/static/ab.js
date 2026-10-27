@@ -13,8 +13,6 @@ async function startAb() {
     abResult = null;
     abIndex = 0;
 
-    document.getElementById("ab-content").hidden = true;
-
     if (comparisonMap !== null) {
         comparisonMap.destroy();
         comparisonMap = null;

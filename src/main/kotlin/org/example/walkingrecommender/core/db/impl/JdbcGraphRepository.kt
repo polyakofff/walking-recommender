@@ -9,6 +9,7 @@ import org.example.walkingrecommender.core.model.SegmentFeatures
 import org.locationtech.jts.geom.LineString
 import org.locationtech.jts.geom.Point
 import org.locationtech.jts.io.WKBReader
+import org.slf4j.LoggerFactory
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -31,22 +32,22 @@ class JdbcGraphRepository(
     private val jdbcTemplate: JdbcTemplate,
 ) : GraphRepository {
 
-    private val wkbReader = WKBReader()
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     @Transactional
     override fun save(graph: Graph) {
         saveNodes(graph.nodes.values)
 
-        println("nodes saved")
+        logger.info("nodes saved")
 
         graph.edges
             .chunked(10_000)
             .forEachIndexed { batchIndex, edges ->
-                println("batch: $batchIndex")
+                logger.info("batch: $batchIndex")
 
                 val ids = allocateEdgeIds(edges.size)
 
-                println("edge ids range: [${ids.first()}, ${ids.last()}]")
+                logger.info("edge ids range: [${ids.first()}, ${ids.last()}]")
 
                 val persistedEdges = edges
                     .zip(ids)
@@ -54,17 +55,17 @@ class JdbcGraphRepository(
 
                 saveEdges(persistedEdges)
 
-                println("edges saved")
+                logger.info("edges saved")
 
                 val segments = persistedEdges.flatMap {
                     edgeSegmentBuilder.build(it)
                 }
 
-                println("segments: ${segments.size}")
+                logger.info("segments: ${segments.size}")
 
                 saveSegments(segments)
 
-                println("segments saved")
+                logger.info("segments saved")
             }
     }
 
@@ -221,6 +222,7 @@ class JdbcGraphRepository(
 
     override fun findSegmentsWithVersionLessThan(version: Int, limit: Int): SegmentsWithEdges {
         val edges = mutableMapOf<Long, Edge>()
+        val wkbReader = WKBReader()
 
         val segments = jdbcTemplate.query(
             """
@@ -263,10 +265,10 @@ class JdbcGraphRepository(
                 val edgeId = rs.getLong("edge_id")
 
                 if (edgeId !in edges) {
-                    edges[edgeId] = mapEdge(rs)
+                    edges[edgeId] = mapEdge(rs, wkbReader)
                 }
 
-                mapEdgeSegment(rs)
+                mapEdgeSegment(rs, wkbReader)
             },
             version, limit,
         )
@@ -278,6 +280,8 @@ class JdbcGraphRepository(
     }
 
     override fun findNearestNode(point: Point): NearestNode? {
+        val wkbReader = WKBReader()
+
         return jdbcTemplate.query(
             """
                 WITH p AS (
@@ -304,7 +308,7 @@ class JdbcGraphRepository(
             """.trimIndent(),
             { rs, _ ->
                 NearestNode(
-                    node = mapNode(rs),
+                    node = mapNode(rs, wkbReader),
                     distanceMeters = rs.getDouble("distance_meters"),
                 )
             },
@@ -313,7 +317,9 @@ class JdbcGraphRepository(
     }
 
     override fun findSubgraph(center: Point, radiusMeters: Double): Graph {
-        val edges = findEdgesWithSegmentsWithin(center, radiusMeters)
+        val wkbReader = WKBReader()
+
+        val edges = findEdgesWithSegmentsWithin(center, radiusMeters, wkbReader)
 
         if (edges.isEmpty()) {
             return Graph(
@@ -328,7 +334,7 @@ class JdbcGraphRepository(
 
         val nodes = nodeOsmIds
             .chunked(10_000)
-            .flatMap { batch -> findNodesByOsmIds(batch) }
+            .flatMap { batch -> findNodesByOsmIds(batch, wkbReader) }
 
         return Graph(
             nodes = nodes.associateBy { it.nodeOsmId },
@@ -336,7 +342,11 @@ class JdbcGraphRepository(
         )
     }
 
-    private fun findEdgesWithSegmentsWithin(center: Point, radiusMeters: Double): List<Edge> {
+    private fun findEdgesWithSegmentsWithin(
+        center: Point,
+        radiusMeters: Double,
+        wkbReader: WKBReader,
+    ): List<Edge> {
         data class Accumulator(
             val edge: Edge,
             val segments: MutableList<EdgeSegment>
@@ -393,12 +403,12 @@ class JdbcGraphRepository(
 
                 val acc = edges.getOrPut(edgeId) {
                     Accumulator(
-                        mapEdge(rs),
+                        mapEdge(rs, wkbReader),
                         mutableListOf(),
                     )
                 }
 
-                acc.segments += mapEdgeSegment(rs)
+                acc.segments += mapEdgeSegment(rs, wkbReader)
             },
             center.x, center.y, radiusMeters,
         )
@@ -410,7 +420,7 @@ class JdbcGraphRepository(
         }
     }
 
-    private fun findNodesByOsmIds(osmIds: List<Long>): List<Node> {
+    private fun findNodesByOsmIds(osmIds: List<Long>, wkbReader: WKBReader): List<Node> {
         if (osmIds.isEmpty()) {
             return emptyList()
         }
@@ -427,13 +437,13 @@ class JdbcGraphRepository(
                 WHERE n.node_osm_id IN ($placeholders)
             """.trimIndent(),
             { rs, _ ->
-                mapNode(rs)
+                mapNode(rs, wkbReader)
             },
             *osmIds.toTypedArray()
         )
     }
 
-    private fun mapNode(rs: ResultSet): Node =
+    private fun mapNode(rs: ResultSet, wkbReader: WKBReader): Node =
         Node(
             id = rs.getLong("id"),
             nodeOsmId = rs.getLong("node_osm_id"),
@@ -442,7 +452,7 @@ class JdbcGraphRepository(
             ) as Point,
         )
 
-    private fun mapEdge(rs: ResultSet): Edge =
+    private fun mapEdge(rs: ResultSet, wkbReader: WKBReader): Edge =
         Edge(
             id = rs.getLong("edge_id"),
             nodeAOsmId = rs.getLong("node_a_osm_id"),
@@ -460,7 +470,7 @@ class JdbcGraphRepository(
             walkingTime = rs.getInt("walking_time")
         )
 
-    private fun mapEdgeSegment(rs: ResultSet): EdgeSegment {
+    private fun mapEdgeSegment(rs: ResultSet, wkbReader: WKBReader): EdgeSegment {
         val featuresVersion = rs.getObject("features_version", Int::class.javaObjectType)
 
         val features = if (featuresVersion == null) {

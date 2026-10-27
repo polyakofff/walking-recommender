@@ -10,15 +10,14 @@ sealed interface EdgeCostFunction {
 }
 
 class FastestCostFunction : EdgeCostFunction {
-    override fun cost(edge: Edge): Double =
-        edge.walkingTime.toDouble()
+    override fun cost(edge: Edge): Double = edge.walkingTime.toDouble()
 
     override val minCostMultiplier: Double = 1.0
 }
 
 class ScenicCostFunction(
     private val preferences: Preferences,
-    val scenicWeight: Double = 0.5,
+    val scenicWeight: Double,
 ) : EdgeCostFunction {
     override fun cost(edge: Edge): Double {
         val attractiveness = attractiveness(edge, preferences)

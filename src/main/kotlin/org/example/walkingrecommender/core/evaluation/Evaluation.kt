@@ -18,6 +18,8 @@ const val MAX_RATING = 5
 enum class BadRatingReason {
     TOO_LONG,
     TOO_SHORT,
+    ROADWAY_PASSES,
+    INVALID_WAY,
     // TODO
 }
 
@@ -30,11 +32,19 @@ object ReasonItems {
     val reasons = listOf(
         ReasonItem(
             BadRatingReason.TOO_LONG,
-            "Маршрут слишком длинный",
+            "Маршрут слишком длинный"
         ),
         ReasonItem(
             BadRatingReason.TOO_SHORT,
-            "Маршрут слишком короткий",
+            "Маршрут слишком короткий"
+        ),
+        ReasonItem(
+            BadRatingReason.ROADWAY_PASSES,
+            "Маршрут проходит по проезжей части"
+        ),
+        ReasonItem(
+            BadRatingReason.INVALID_WAY,
+            "Маршрут содержит невалидный участок"
         )
     )
 }

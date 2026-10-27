@@ -5,7 +5,6 @@ import org.example.walkingrecommender.core.model.OsmElementType
 import org.example.walkingrecommender.core.model.SegmentId
 import org.example.walkingrecommender.core.model.UrbanObject
 import org.example.walkingrecommender.core.model.UrbanObjectType
-import org.locationtech.jts.io.WKBReader
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.stereotype.Repository
 import org.springframework.transaction.annotation.Transactional
@@ -27,8 +26,6 @@ class JdbcUrbanObjectRepository(
     private val jdbcTemplate: JdbcTemplate,
     private val objectMapper: ObjectMapper,
 ) : UrbanObjectRepository {
-
-    private val wkbReader = WKBReader()
 
     @Transactional
     override fun save(objects: List<UrbanObject>) {

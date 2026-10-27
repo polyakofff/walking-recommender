@@ -11,9 +11,38 @@ let selectingStart = true;
 async function startTest() {
     showScreen("route-screen");
 
+    document.getElementById("start-value").textContent = "не выбран";
+    document.getElementById("end-value").textContent = "не выбран";
+    document.getElementById("start-equals-end").checked = false;
+    document.getElementById("duration").value = 60;
+    document.getElementById("count").value = 10;
+
+    document.getElementById("ab-content").hidden = true;
+    document.getElementById("eval-content").hidden = true;
+
     if (map === null) {
         await initMap();
     }
+
+    map.setLocation({
+        center: [37.588144, 55.733842],
+        zoom: 10
+    });
+
+    start = null;
+    end = null;
+
+    if (startMarker !== null) {
+        map.removeChild(startMarker);
+        startMarker = null;
+    }
+
+    if (endMarker !== null) {
+        map.removeChild(endMarker);
+        endMarker = null;
+    }
+
+    selectingStart = true;
 }
 
 const startEqualsEndCheckbox =
@@ -108,13 +137,13 @@ startEqualsEndCheckbox.addEventListener("change", function () {
         if (start !== null) {
             end = [...start];
 
-            document.getElementById("end-value").textContent =
-                "= Start";
+            document.getElementById("end-value")
+                .textContent = "= Начало";
         } else {
             end = null;
 
-            document.getElementById("end-value").textContent =
-                "не выбран";
+            document.getElementById("end-value")
+                .textContent = "не выбран";
         }
 
         // Если раньше уже был отдельный End-marker — убираем его
@@ -128,17 +157,18 @@ startEqualsEndCheckbox.addEventListener("change", function () {
         // Теперь End снова надо выбрать отдельно
         end = null;
 
-        document.getElementById("end-value").textContent =
-            "не выбран";
+        document.getElementById("end-value")
+            .textContent = "не выбран";
 
         selectingStart = start == null;
     }
 });
 
 
-document
-    .getElementById("generate")
-    .addEventListener("click", generate);
+
+const generateButton = document.getElementById("generate");
+
+generateButton.addEventListener("click", generate);
 
 async function generate() {
     if (startEqualsEndCheckbox.checked) {
@@ -150,13 +180,17 @@ async function generate() {
         return;
     }
 
+    generateButton.disabled = true;
+
     switch (routeMode) {
         case "ab":
             await generateAb();
+            generateButton.disabled = false;
             break;
 
         case "eval":
             await generateEval();
+            generateButton.disabled = false;
             break;
 
         default:

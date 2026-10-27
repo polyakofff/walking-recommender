@@ -3,14 +3,80 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.postgres
+
+    restart: unless-stopped
+
     volumes:
       - ./tmp/db:/var/lib/postgresql/data
+
     environment:
       POSTGRES_DB: walking_recommender
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+
     ports:
       - "5432:5432"
+
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
-      interval: 1s
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d walking_recommender"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    environment:
+      TZ: Europe/Moscow
+
+      DB_URL: jdbc:postgresql://db:5432/walking_recommender
+      DB_USER: postgres
+      DB_PASSWORD: ${DB_PASSWORD}
+
+      JAVA_TOOL_OPTIONS: >-
+        -Xmx6g
+        -Duser.timezone=Europe/Moscow
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/logs/heapdump.hprof
+
+      LOG_PATH: /logs
+
+    volumes:
+      - ./tmp/logs:/logs
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+  ngrok:
+    image: ngrok/ngrok:latest
+
+    restart: unless-stopped
+
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+
+    command:
+      - http
+      - backend:8080
+      - --url
+      - https://galleria-envision-amplifier.ngrok-free.dev
+
+    ports:
+      - "4040:4040"
+
+    depends_on:
+      - backend

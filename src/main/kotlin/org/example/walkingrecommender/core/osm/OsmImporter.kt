@@ -1,11 +1,13 @@
 package org.example.walkingrecommender.core.osm
 
+import org.example.walkingrecommender.MemoryUtils
 import org.example.walkingrecommender.core.db.GraphRepository
 import org.example.walkingrecommender.core.db.UrbanObjectRepository
 import org.example.walkingrecommender.core.osm.extractor.UrbanObjectExtractor
 import org.example.walkingrecommender.core.osm.filter.WalkableOsmFilter
 import org.example.walkingrecommender.core.osm.graph.GraphBuilder
 import org.example.walkingrecommender.core.osm.graph.LargestConnectedComponentFilter
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import java.io.File
 
@@ -20,6 +22,7 @@ class OsmImporter(
     private val urbanObjectRepository: UrbanObjectRepository,
 ) {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val fileName = "data/osm/moscow"
 
     fun importAll() {
@@ -35,8 +38,8 @@ class OsmImporter(
     fun importGraph(data: OsmData) {
         val graphData = walkableOsmFilter.filterByWalkable(data)
 
-        println("nodes: ${graphData.nodesMap.size}")
-        println("walkable ways: ${graphData.ways.size}")
+        logger.info("nodes: ${graphData.nodesMap.size}")
+        logger.info("walkable ways: ${graphData.ways.size}")
 
         var graph = graphBuilder.build(graphData)
 
@@ -44,8 +47,8 @@ class OsmImporter(
 
         printMemory()
 
-        println("final graph nodes: ${graph.nodes.size}")
-        println("final graph edges: ${graph.edges.size}")
+        logger.info("final graph nodes: ${graph.nodes.size}")
+        logger.info("final graph edges: ${graph.edges.size}")
 
         graphRepository.save(graph)
 
@@ -54,11 +57,11 @@ class OsmImporter(
 
     fun importUrbanObjects(data: OsmData) {
         for (extractor in urbanObjectExtractors) {
-            println("Extractor: ${extractor.getUrbanObjectType()}")
+            logger.info("Extractor: ${extractor.getUrbanObjectType()}")
 
             val objects = extractor.extract(data)
 
-            println("Objects: ${objects.size}")
+            logger.info("Objects: ${objects.size}")
 
             urbanObjectRepository.save(objects)
         }
@@ -67,19 +70,13 @@ class OsmImporter(
     }
 
     private fun printStats(data: OsmData) {
-        println("nodes: ${data.nodes.size}")
-        println("ways: ${data.ways.size}")
-        println("relations: ${data.relations.size}")
+        logger.info("nodes: ${data.nodes.size}, ways: ${data.ways.size}, relations: ${data.relations.size}")
     }
 
     private fun printMemory() {
-        val runtime = Runtime.getRuntime()
-
-        val used = runtime.totalMemory() - runtime.freeMemory()
-
-        println(
+        logger.info(
             "Used memory: %.2f GB".format(
-                used / 1024.0 / 1024 / 1024
+                MemoryUtils.heapUsedMb() / 1024.0
             )
         )
     }

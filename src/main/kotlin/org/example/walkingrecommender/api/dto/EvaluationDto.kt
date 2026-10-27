@@ -21,9 +21,21 @@ data class EvaluateRequest(
 
 data class EvaluationResponse(
     val maxRating: Int,
-    val reasons: List<ReasonItem>,
+    val reasons: List<ReasonDto>,
     val evaluations: List<Evaluation>,
 )
+
+data class ReasonDto(
+    val value: BadRatingReason,
+    val text: String,
+)
+
+fun ReasonItem.toDto(): ReasonDto {
+    return ReasonDto(
+        value = reason,
+        text = text,
+    )
+}
 
 data class Evaluation(
     val id: UUID,

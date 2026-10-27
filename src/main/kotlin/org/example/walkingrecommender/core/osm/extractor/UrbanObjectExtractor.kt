@@ -4,10 +4,12 @@ import org.example.walkingrecommender.core.model.OsmElementType
 import org.example.walkingrecommender.core.model.UrbanObject
 import org.example.walkingrecommender.core.model.UrbanObjectType
 import org.example.walkingrecommender.core.osm.OsmData
+import org.slf4j.LoggerFactory
 
 abstract class UrbanObjectExtractor(
     private val geometryBuilder: GeometryBuilder,
 ) {
+    private val logger = LoggerFactory.getLogger(javaClass)
 
     fun extract(data: OsmData): List<UrbanObject> {
         val filtered = filterData(data)
@@ -32,7 +34,7 @@ abstract class UrbanObjectExtractor(
                     try {
                         geometryBuilder.buildPolygon(it, data)
                     } catch (ex: Exception) {
-                        println("osm way id: ${it.id}, error: ${ex.message}")
+                        logger.error("osm way id: ${it.id}, error: ${ex.message}", ex)
                         return@mapNotNull null
                     }
                 } else {

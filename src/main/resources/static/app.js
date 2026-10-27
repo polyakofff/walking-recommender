@@ -4,6 +4,18 @@ const state = {
 };
 
 
+window.onerror = function (message, source, lineno, colno, error) {
+    alert(
+        `JS ERROR:\n${message}\n` +
+        `${source}:${lineno}:${colno}`
+    )
+}
+
+window.onunhandledrejection = function (event) {
+    alert(`PROMISE ERROR:\n${event.reason}`)
+}
+
+
 init();
 
 async function init() {
@@ -159,8 +171,6 @@ document
     .addEventListener("click", () => {
         showMainScreen();
     });
-
-
 
 document
     .getElementById("change-user-button")

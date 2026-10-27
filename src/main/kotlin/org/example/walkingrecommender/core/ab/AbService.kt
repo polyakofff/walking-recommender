@@ -8,6 +8,7 @@ import org.example.walkingrecommender.core.model.RouteType
 import org.example.walkingrecommender.core.routing.*
 import org.example.walkingrecommender.user.UserService
 import org.example.walkingrecommender.user.toPreferences
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -20,7 +21,7 @@ class AbService(
     private val routeRepository: RouteRepository,
     private val comparisonRepository: ComparisonRepository,
 ) {
-
+    private val logger = LoggerFactory.getLogger(javaClass)
     private val labels = ConcurrentHashMap<UUID, String>()
 
     fun getComparisons(request: AbRequest): List<Comparison> {
@@ -85,22 +86,16 @@ class AbService(
 
     fun vote(request: VoteRequest) {
         val label = labels[request.comparisonId]
-            ?: throw IllegalStateException("Unknown comparison [${request.comparisonId}]")
+            ?: error("Unknown comparison [${request.comparisonId}]")
 
-        when {
-            request.choice == Choice.EQUAL -> {
-                println("Equal")
-            }
-            request.choice == Choice.NONE -> {
-                println("None")
-            }
-            request.choice.name == label -> {
-                println("Right")
-            }
-            request.choice.name != label -> {
-                println("Wrong")
-            }
+        val result = when {
+            request.choice == Choice.EQUAL -> "Equal"
+            request.choice == Choice.NONE -> "None"
+            request.choice.name == label -> "${request.choice.name} -> Right :)"
+            request.choice.name != label -> "${request.choice.name} -> Wrong :("
+            else -> error("Unknown choice")
         }
+        logger.info("Comparison ${request.comparisonId}: $result")
 
         comparisonRepository.update(
             comparisonId = request.comparisonId,
