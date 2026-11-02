@@ -23,7 +23,7 @@ class OsmImporter(
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
-    private val fileName = "data/osm/moscow"
+    private val fileName = "../data/osm/moscow"
 
     fun importAll() {
         val data = osmParser.parse(File(fileName))

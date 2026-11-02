@@ -1,12 +1,11 @@
-HELP.md
-.gradle
+backend/HELP.md
+backend/.gradle
 build/
-!gradle/wrapper/gradle-wrapper.jar
+!backend/gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 data/
-logs/
-src/main/kotlin/org/example/walkingrecommender/core/main/test/
+backend/src/main/kotlin/org/example/walkingrecommender/core/main/test/
 tmp/
 .env
 walker.kubeconfig
@@ -44,4 +43,4 @@ out/
 .vscode/
 
 ### Kotlin ###
-.kotlin
+backend/.kotlin
